@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrições - Barracas da Festa</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ffa726);
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        .refresh-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .refresh-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .footer-info {
+            position: absolute;
+            bottom: 10px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .programmed-by {
+            text-align: left;
+        }
+
+        .last-update {
+            text-align: right;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.2rem;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .barracas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .barraca-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .barraca-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .barraca-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #ff6b6b;
+        }
+
+        .turno-section {
+            margin-bottom: 25px;
+        }
+
+        .turno-header {
+            background: #fc6e4a;
+            font-size: 1.2rem;
+            color: #ffffff;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .vagas-contador {
+            background: #f3ecea;
+            color: #fc6e4a;
+            padding: 5px 12px;
+            border-radius: 0px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .vagas-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .vaga-slot {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .vaga-slot.disponivel {
+            border-color: #4caf50;
+            background: #f1f8e9;
+            color: #2e7d32;
+        }
+
+        .vaga-slot.disponivel:hover {
+            background: #c8e6c9;
+            transform: scale(1.02);
+        }
+
+        .vaga-slot.ocupada {
+            border-color: #f44336;
+            background: #ffebee;
+            color: #c62828;
+            cursor: not-allowed;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            animation: modalAppear 0.3s ease;
+        }
+
+        @keyframes modalAppear {
+            from { opacity: 0; transform: scale(0.7); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .config-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .config-title {
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .config-steps {
+            font-size: 0.9rem;
+            color: #6c5700;
+            line-height: 1.6;
+        }
+
+        .config-steps ol {
+            margin-left: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .barracas-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+
+            .footer-info {
+                flex-direction: column;
+                gap: 5px;
+                text-align: center;
+            }
+
+            .programmed-by,
+            .last-update {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="refresh-btn" id="refresh-btn" onclick="atualizarAgora()">
+                🔄 Atualizar Agora
+            </button>
+            <h1>🎪 Festa Cultural do CEE 01 do Gama</h1><br>
+            <h2>Inscrições das Barracas</h2>
+            <p>Escolha sua barraca e turno de trabalho para a festa!</p>
+            <div class="footer-info">
+                <div class="programmed-by">
+                    Programado por: Prof. André Silvera
+                </div>
+                <div class="last-update" id="last-update" style="display: none;">
+                    Última atualização: <span id="update-time"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="config-section" id="config-section" style="display: none;">
+                <div class="config-title">📋 Configuração Necessária</div>
+                <div class="config-steps">
+                    <p><strong>Para usar este sistema, você precisa configurar uma planilha do Google:</strong></p>
+                    <ol>
+                        <li>Acesse <a href="https://sheets.google.com" target="_blank">Google Sheets</a> e crie uma nova planilha</li>
+                        <li>Nomeie a primeira aba como "Inscricoes"</li>
+                        <li>Crie os cabeçalhos na linha 1: <code>Nome | Turma | Barraca | Turno | Data</code></li>
+                        <li>Vá em <strong>Extensões → Apps Script</strong></li>
+                        <li>Cole o código do script (fornecido separadamente)</li>
+                        <li>Publique como Web App</li>
+                        <li>Cole a URL do Web App no campo abaixo</li>
+                    </ol>
+                    <div style="margin-top: 15px;">
+                        <label for="script-url" style="font-weight: bold;">URL do Google Apps Script:</label>
+                        <input type="url" id="script-url" placeholder="https://script.google.com/macros/s/.../exec" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px;">
+                        <button onclick="configurarScript()" style="margin-top: 10px; background: #4285f4; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Conectar com Google Sheets</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading" class="loading" style="display: none;">
+                <div class="loading-spinner"></div>
+                Carregando dados das inscrições...
+            </div>
+
+            <div id="barracas-container" class="barracas-grid" style="display: none;">
+                </div>
+        </div>
+    </div>
+
+    <div id="inscricaoModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title">Fazer Inscrição</h2>
+            <form id="inscricaoForm">
+                <div class="form-group">
+                    <label for="nome">Nome: (primeiro e último)</label>
+                    <input type="text" id="nome" name="nome" required placeholder="Ex: MARIA DA SILVA">
+                </div>
+                <div class="form-group">
+                    <label for="turma">Turma:</label>
+                    <input type="text" id="turma" name="turma" required placeholder="Ex: 2UC, 4TF, etc">
+                </div>
+                <button type="submit" class="btn" id="submit-btn">Confirmar Inscrição</button>
+            </form>
+            <div id="success-message" class="success-message" style="display: none;">
+                ✅ Inscrição realizada com sucesso!
+            </div>
+            <div id="error-message" class="error-message" style="display: none;">
+                ❌ Erro ao fazer inscrição. Tente novamente.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração das barracas
+        const barracasConfig = [
+            { nome: "Cachorro-quente 01", vagas: 4, emoji: "🌭" },
+            { nome: "Cachorro-quente 02", vagas: 4, emoji: "🌭" },
+            { nome: "Caldos", vagas: 4, emoji: "🍲" },
+            { nome: "Canjica", vagas: 4, emoji: "🌽" },
+            { nome: "Milho", vagas: 4, emoji: "🌽" },
+            { nome: "Bolo", vagas: 4, emoji: "🍰" },
+            { nome: "Refrigerante", vagas: 4, emoji: "🥤" },
+            { nome: "Pescaria", vagas: 4, emoji: "🎣" },
+            { nome: "Brinquedos", vagas: 4, emoji: "🎠" }
+        ];
+
+        // URL do Google Apps Script
+        let scriptUrl = 'https://script.google.com/macros/s/AKfycbw_9t7q3A_HgSpBpdfJpAlb6GeaXDn-Sw7G5GtKDrIITtCfpGStJCQ4Vwk5owjUtS6VSg/exec';
+
+        let inscricoes = {};
+        let isLoading = false;
+        let lastUpdateTime = null;
+
+        // Atualizar agora (botão manual)
+        function atualizarAgora() {
+            if (scriptUrl && !isLoading) {
+                carregarDados();
+            }
+        }
+
+        // Configurar conexão com Google Sheets (esta função não será mais chamada automaticamente no início)
+        // Mas mantida caso o usuário queira configurar uma nova URL.
+        function configurarScript() {
+            const url = document.getElementById('script-url').value.trim();
+            if (!url) {
+                alert('Por favor, insira a URL do Google Apps Script');
+                return;
+            }
+            
+            scriptUrl = url;
+            document.getElementById('config-section').style.display = 'none';
+            carregarDados();
+        }
+
+        // Inicializar dados
+        function inicializarDados() {
+            barracasConfig.forEach(barraca => {
+                inscricoes[barraca.nome] = {
+                    turno1: [],
+                    turno2: []
+                };
+            });
+        }
+
+        // Carregar dados do Google Sheets
+        async function carregarDados() {
+            if (isLoading) return;
+            
+            isLoading = true;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('barracas-container').style.display = 'none';
+            
+            // Desabilitar botão de refresh
+            const refreshBtn = document.getElementById('refresh-btn');
+            if (refreshBtn) {
+                refreshBtn.disabled = true;
+                refreshBtn.textContent = '🔄 Atualizando...';
+            }
+            
+            try {
+                const response = await fetch(`${scriptUrl}?action=get&t=${Date.now()}`);
+                const data = await response.json();
+                
+                inicializarDados();
+                
+                // Processar dados recebidos
+                if (data.success && data.data) {
+                    data.data.forEach(row => {
+                        // Certifique-se de que a ordem e o nome da propriedade correspondem ao Apps Script
+                        if (row.nome && row.barraca && row.turno && row.turma) {
+                            const turnoKey = row.turno === '1º Turno (14h-19h)' ? 'turno1' : 'turno2';
+                            if (inscricoes[row.barraca]) {
+                                inscricoes[row.barraca][turnoKey].push({
+                                    nome: row.nome,
+                                    turma: row.turma,
+                                    data: row.data
+                                });
+                            }
+                        }
+                    });
+                }
+                
+                gerarBarracas();
+                document.getElementById('barracas-container').style.display = 'grid';
+                
+                // Atualizar timestamp
+                lastUpdateTime = new Date();
+                const updateElement = document.getElementById('update-time');
+                const lastUpdateElement = document.getElementById('last-update');
+                if (updateElement && lastUpdateElement) {
+                    updateElement.textContent = lastUpdateTime.toLocaleTimeString('pt-BR');
+                    lastUpdateElement.style.display = 'block';
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                if (!document.getElementById('barracas-container').style.display || 
+                    document.getElementById('barracas-container').style.display === 'none') {
+                    alert('Erro ao conectar com Google Sheets. Verifique a URL e se o script está publicado como Web App com acesso "Qualquer pessoa".');
+                    document.getElementById('config-section').style.display = 'block';
+                }
+            } finally {
+                isLoading = false;
+                document.getElementById('loading').style.display = 'none';
+                
+                if (refreshBtn) {
+                    refreshBtn.disabled = false;
+                    refreshBtn.textContent = '🔄 Atualizar Agora';
+                }
+            }
+        }
+
+        // Salvar inscrição no Google Sheets
+        async function salvarInscricao(nome, turma, barraca, turno) {
+            try {
+                // Mapear turnoKey para o texto completo que será salvo na planilha
+                const turnoTexto = turno === 'turno1' ? '1º Turno (14h-19h)' : '2º Turno (17h-22h)';
+
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'add',
+                        nome: nome,
+                        turma: turma,
+                        barraca: barraca,
+                        turno: turnoTexto,
+                        data: new Date().toLocaleString('pt-BR')
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    console.error("Erro do Apps Script:", result.error);
+                    // Este é o ponto onde o erro do Apps Script será exibido se a vaga já estiver ocupada
+                    alert("Erro ao fazer inscrição: " + result.error);
+                }
+                return result.success;
+                
+            } catch (error) {
+                console.error('Erro de rede ou ao salvar:', error);
+                alert("Erro ao fazer inscrição. Verifique sua conexão ou tente novamente.");
+                return false;
+            }
+        }
+
+        // Gerar HTML das barracas
+        function gerarBarracas() {
+            const container = document.getElementById('barracas-container');
+            container.innerHTML = '';
+
+            barracasConfig.forEach(barraca => {
+                const barracaDiv = document.createElement('div');
+                barracaDiv.className = 'barraca-card';
+                
+                barracaDiv.innerHTML = `
+                    <div class="barraca-title">
+                        ${barraca.emoji} ${barraca.nome}
+                    </div>
+                    
+                    <div class="turno-section">
+                        <div class="turno-header">
+                            <span>🌅 1º Turno (14h-19h)</span>
+                            <span class="vagas-contador">${barraca.vagas - inscricoes[barraca.nome].turno1.length}/${barraca.vagas} vagas</span>
+                        </div>
+                        <div class="vagas-grid">
+                            ${gerarVagas(barraca.nome, 'turno1', barraca.vagas)}
+                        </div>
+                    </div>
+                    
+                    <div class="turno-section">
+                        <div class="turno-header">
+                            <span>🌙 2º Turno (17h-22h)</span>
+                            <span class="vagas-contador">${barraca.vagas - inscricoes[barraca.nome].turno2.length}/${barraca.vagas} vagas</span>
+                        </div>
+                        <div class="vagas-grid">
+                            ${gerarVagas(barraca.nome, 'turno2', barraca.vagas)}
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(barracaDiv);
+            });
+        }
+
+        // Gerar vagas
+        function gerarVagas(barraca, turno, totalVagas) {
+            let html = '';
+            const vagasOcupadas = inscricoes[barraca][turno];
+            
+            for (let i = 0; i < totalVagas; i++) {
+                if (i < vagasOcupadas.length) {
+                    // Exibir nome e turma da inscrição
+                    html += `<div class="vaga-slot ocupada">${vagasOcupadas[i].nome}</div>`;
+                } else {
+                    html += `<div class="vaga-slot disponivel" onclick="abrirModal('${barraca}', '${turno}')">Disponível</div>`;
+                }
+            }
+            
+            return html;
+        }
+
+        // Abrir modal
+        function abrirModal(barraca, turno) {
+            document.getElementById('modal-title').textContent = `Inscrição: ${barraca} - ${turno === 'turno1' ? '1º Turno (14h-19h)' : '2º Turno (17h-22h)'}`;
+            document.getElementById('inscricaoModal').style.display = 'block';
+            
+            document.getElementById('inscricaoForm').dataset.barraca = barraca;
+            document.getElementById('inscricaoForm').dataset.turno = turno;
+        }
+
+        // Fechar modal
+        function fecharModal() {
+            document.getElementById('inscricaoModal').style.display = 'none';
+            document.getElementById('inscricaoForm').reset();
+            document.getElementById('success-message').style.display = 'none';
+            document.getElementById('error-message').style.display = 'none';
+            document.getElementById('submit-btn').disabled = false;
+        }
+
+        // Processar inscrição
+        async function processarInscricao(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const barraca = form.dataset.barraca;
+            const turno = form.dataset.turno;
+            const nome = document.getElementById('nome').value.trim();
+            const turma = document.getElementById('turma').value.trim();
+            
+            if (!nome) {
+                alert('Por favor, preencha o nome');
+                return;
+            }
+            if (!turma) {
+                alert('Por favor, preencha a turma do voluntário');
+                return;
+            }
+            
+            // Desabilitar botão
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('submit-btn').textContent = 'Salvando...';
+            
+            // Salvar no Google Sheets
+            const sucesso = await salvarInscricao(nome, turma, barraca, turno);
+            
+            if (sucesso) {
+                // Se a inscrição foi bem-sucedida, atualizamos a interface localmente
+                inscricoes[barraca][turno].push({
+                    nome: nome,
+                    turma: turma,
+                    data: new Date().toLocaleString('pt-BR')
+                });
+                
+                // Recarrega os dados para garantir que a vaga apareça como ocupada
+                await carregarDados(); 
+                
+                // Mostrar sucesso
+                document.getElementById('success-message').style.display = 'block';
+                form.style.display = 'none';
+                
+                setTimeout(() => {
+                    fecharModal();
+                    form.style.display = 'block';
+                }, 2000);
+                
+            } else {
+                // Se houve erro (ex: vaga já ocupada), o Apps Script enviou uma mensagem de erro que será exibida.
+                document.getElementById('error-message').style.display = 'block';
+            }
+            
+            document.getElementById('submit-btn').disabled = false;
+            document.getElementById('submit-btn').textContent = 'Confirmar Inscrição';
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal events
+            document.querySelector('.close').addEventListener('click', fecharModal);
+            document.getElementById('inscricaoModal').addEventListener('click', function(e) {
+                if (e.target === this) fecharModal();
+            });
+            
+            // Form submit
+            document.getElementById('inscricaoForm').addEventListener('submit', processarInscricao);
+            
+            // Inicializar dados automaticamente com a URL pré-definida
+            carregarDados();
+
+            // Auto-refresh a cada 30 segundos (TEMPO AUMENTADO)
+            setInterval(() => {
+                if (scriptUrl && !isLoading) {
+                    carregarDados();
+                }
+            }, 30000); // 30 segundos
+        });
+    </script>
+</body>
+</html>
+
+
